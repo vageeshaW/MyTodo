@@ -1,117 +1,150 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+import React, {useState} from 'react';
 
-import React from 'react';
-import type {PropsWithChildren} from 'react';
 import {
+  FlatList,
   SafeAreaView,
-  ScrollView,
-  StatusBar,
   StyleSheet,
   Text,
-  useColorScheme,
+  TextInput,
   View,
 } from 'react-native';
+import Button from './src/components/Button';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
-
-type SectionProps = PropsWithChildren<{
+type Task = {
+  id: number;
   title: string;
-}>;
-
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-}
+  status: boolean;
+};
 
 function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+  const [tasks, setTasks] = useState<Task[]>([
+    {id: 1, title: 'Create todo list', status: true},
+  ]);
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+  const addTask = () => {
+    if (newTaskTitle.trim()) {
+      const newTask: Task = {
+        id: Date.now(),
+        title: newTaskTitle,
+        status: false,
+      };
+      setTasks([...tasks, newTask]);
+      setNewTaskTitle('');
+    }
   };
 
+  const deleteTask = (id: number) => {
+    setTasks(tasks.filter(task => task.id !== id));
+  };
+
+  const toggleTaskStatus = (id: number) => {
+    setTasks(
+      tasks.map(task =>
+        task.id === id ? {...task, status: !task.status} : task,
+      ),
+    );
+  };
+
+  const filteredTasks = tasks.filter(task =>
+    task.title.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
+
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
+    <SafeAreaView style={styles.container}>
+      <Text style={styles.title}>Todo List</Text>
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={styles.input}
+          placeholder="Add new task"
+          value={newTaskTitle}
+          onChangeText={setNewTaskTitle}
+        />
+        <Button title="Add" onPress={addTask} />
+      </View>
+      <TextInput
+        style={styles.searchInput}
+        placeholder="Search tasks"
+        value={searchQuery}
+        onChangeText={setSearchQuery}
       />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
+      <FlatList
+        data={filteredTasks}
+        keyExtractor={item => item.id.toString()}
+        renderItem={({item, index}) => (
+          <View style={styles.taskContainer}>
+            <Text style={styles.taskTitle}>
+              {index + 1}. {item.title}
+            </Text>
+            <Text style={styles.taskStatus}>
+              {item.status ? 'Done' : 'Not Done'}
+            </Text>
+            <View style={styles.actions}>
+              <Button
+                title={item.status ? 'Undo' : 'Done'}
+                onPress={() => toggleTaskStatus(item.id)}
+              />
+              <Button title={'Delete'} onPress={() => deleteTask(item.id)} />
+            </View>
+          </View>
+        )}
+      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
+  container: {
+    flex: 1,
+    padding: 20,
+    margin: 10,
+    backgroundColor: '#f8f8f8',
   },
-  sectionTitle: {
+  title: {
     fontSize: 24,
-    fontWeight: '600',
+    fontWeight: 'bold',
+    marginBottom: 20,
   },
-  sectionDescription: {
-    marginTop: 8,
+  inputContainer: {
+    flexDirection: 'row',
+    marginBottom: 20,
+  },
+  input: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    padding: 10,
+    marginRight: 10,
+  },
+  searchInput: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    padding: 10,
+    marginBottom: 20,
+  },
+  taskContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 15,
+    backgroundColor: '#fff',
+    borderRadius: 5,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#ccc',
+  },
+  taskTitle: {
     fontSize: 18,
-    fontWeight: '400',
   },
-  highlight: {
-    fontWeight: '700',
+  taskStatus: {
+    fontSize: 14,
+    color: '#888',
+  },
+  actions: {
+    flexDirection: 'row',
   },
 });
 
